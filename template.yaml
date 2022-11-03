@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  ImageAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/image-app-lambda.jar
+      Handler: io.storage.imagestorageapp.NotificationQueueHandler
+      Role: !GetAtt ImageAppFunctionRole.Arn
+      Runtime: java11
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Timeout: 5
+      Events:
+        SQSToSNS:
+          Type: Api
+          Properties:
+            Path: /send-notification
+            Method: get
+        CloudWatchEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(3 minutes)
+
+  ImageAppFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CloudWatchFullAccessForLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: SqsFullAccessForLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: '*'
+        - PolicyName: SnsFullAccessForLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:*
+                Resource: '*'
+
+
+Outputs:
+  APIGateway:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send-notification/"
+  ImageAppFunction:
+    Description: "SQS to SNS Lambda Function ARN"
+    Value: !GetAtt ImageAppFunction.Arn
+  ImageAppFunctionIamRole:
+    Description: "IAM Role for this lambda function"
+    Value: !GetAtt ImageAppFunctionRole.Arn
+
+

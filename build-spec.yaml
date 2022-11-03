@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+  build:
+    commands:
+      - echo Java building process started on `date`
+      - mvn clean
+      - mvn package
+  post_build:
+    commands:
+      - echo Building completed on `date`
+      - aws cloudformation package --template-file template.yaml --s3-bucket samandar-website --output-template-file packaged.yaml
+artifacts:
+  files:
+    - packaged.yaml
+
+
