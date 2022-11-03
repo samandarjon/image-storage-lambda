@@ -1,2 +1,4 @@
 /.idea/
 /notification-sender/.aws-sam/
+/notification-sender/.idea/
+/notification-sender/target/
